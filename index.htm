@@ -53,8 +53,55 @@
 			context.fillText( text, x, y );
 		}
 	}
+	
 	/*
-	* Класс выводящий кнопку на канву, и обрабатывающий нажатия
+	* Class:: GUI который выводит меню на экран
+	*/
+	function Menu(options, game){
+		let self = this;
+		let items = [];
+		let canvasOpt = options['canvas'];
+		let canvas = canvasOpt['canvas'];
+		initiateMenu();
+		
+	
+		/*Инициация меню*/
+		function initiateMenu(){
+			let btnOpt={
+				'text':'',
+				'x':canvasOpt['width']*0.05,
+				'y':100,
+				'w':canvasOpt['width']*0.9,	
+				'h':40,
+				'canvas': canvas,
+			}
+			for(let i = 0; i<6; i++){
+				items.push(new Button(btnOpt));
+				items[i].isEnable=false;
+				btnOpt.y+=60;
+			}
+			
+		}
+		/*Показать меню*/
+		self.showMenu = function showMenu(itemsOpt){
+			for(let i = 0; i<itemsOpt.length; i++){
+				items[i].onclick= function (){
+					//заблокируем все кнопки меню
+					for(let i = 0; i<6; i++){
+						items[i].isEnable=false;
+					}
+					game.goTo(itemsOpt[i]['to']);
+					game.execScript();
+				};
+				items[i].text = itemsOpt[i].text;
+				items[i].isEnable=true;
+				items[i].draw();
+			}
+		}
+	}
+	
+	/*
+	* Class:: GUI выводящий кнопку на канву, и обрабатывающий нажатия
 	*/
 	function Button(options){
 		let self = this;
@@ -121,7 +168,7 @@
 	}
 	
 	/*
-	* Класс для изображения элиментов интерфейса
+	* Class:: для изображения элиментов интерфейса
 	*/
 	function TanInterface(options, tanEngine){
 		let self = this; 
@@ -166,8 +213,16 @@
 			}
 		}
 	}
+	
 	/*
-	* Класс движка. Инкапсулирует в себе все компоненты игры и обрабатывает их.
+	* Класс персонажа
+	*/
+	function character(){
+		
+	}
+	
+	/*
+	* Class:: движка. Инкапсулирует в себе все компоненты игры и обрабатывает их.
 	*/
 	function TanEngine(options){
 		let scriptStr = 0;
@@ -186,8 +241,7 @@
 		//метки для перехода
 		let labels = {};
 		//меню
-		let menu=[];
-		initiateMenu();
+		let menu= new Menu(options, self);
 		
 		self.interface = new TanInterface(options, self);
 		
@@ -201,6 +255,10 @@
 		self.context.fillStyle = self.canvasOpt['color'];
 		self.context.fillRect(0, 0, self.canvasOpt['width'], self.canvasOpt['height']);
 		
+		/*
+		* Выводит персонажа на экран, в уазанном положении
+		* ToDo:: Стоит вынести персонажа в отдельный класс
+		*/
 		function drawCharacter(animation = 'none'){
 			let context = self.context;
 			let canvasOpt = self.canvasOpt;
@@ -236,17 +294,21 @@
 
 			
 		}
+		
+		/*
+		* Выводит сцену на экран
+		*/
 		function drawScene(filter='none',animation = 'none'){
 			sceneImg = self.imgResources[self.sceneImg];
 			if(sceneImg!=null){
 				self.context.drawImage(sceneImg,0,0);
 			}
 		}
-		function drawNextButton(){
-
-			nextBtn.draw()
-		}
-		function charSay(character, text){
+		
+		/*
+		* Выводит реч персонажа на экран
+		*/
+		function charSay(options){
 			//padding
 			p=40;
 			m=20;
@@ -266,12 +328,18 @@
 			context.fillStyle = 'black';
 			context.rect(x,y, width, height);
 			context.stroke();
-			context.fillStyle = 'red';
-			printAt(context, character, x+p,y+p, width-p,  height-p);
+			if(options['color']!=null){
+				context.fillStyle = options['color'];
+			}else{
+				context.fillStyle = 'red';
+			}
+			
+			printAt(context, options['char'], x+p,y+p, width-p,  height-p);
 			context.fillStyle = 'black';
-			printAt(context, text, x+p,y+p*2, width-p*2, 20);
+			printAt(context, options['text'], x+p,y+p*2, width-p*2, 20);
 			context.font = "12px Arial";
 		}
+		
 		//грузит изображения
 		function loadImages(imgs){
 			countOfUnloaded=Object.keys(imgs).length;
@@ -286,7 +354,10 @@
 				}
 			}		
 		}
-		//переход к метке
+		
+		/*
+		* Метод перехода к метке
+		*/
 		function goTo(label){
 			if(labels[label]!=null){
 				scriptStr = labels[label];
@@ -303,43 +374,19 @@
 				}
 			}
 		}
+		self.goTo = goTo;
 		
-		
-		function initiateMenu(){
-			let btnOpt={
-				'text':menu['text'],
-				'x':self.canvasOpt['width']*0.05,
-				'y':100,
-				'w':self.canvasOpt['width']*0.9,	
-				'h':40,
-				'canvas': canvas,
-			}
-			for(let i = 0; i<6; i++){
-				menu.push(new Button(btnOpt));
-				menu[i].isEnable=false;
-				btnOpt.y+=60;
-			}
-			
-		}
-		function showMenu(items){
-			for(let i = 0; i<items.length; i++){
-				menu[i].onclick= function (){
-					//заблокируем все кнопки меню
-					for(let i = 0; i<6; i++){
-						menu[i].isEnable=false;
-					}
-					goTo(items[i]['to']);
-					self.execScript();
-				};
-				menu[i].text = items[i].text;
-				menu[i].isEnable=true;
-				menu[i].draw();
-			}
-		}
+		/*
+		* Запуск игры
+		*/
 		self.start = function (scriptOptions){
 			script=scriptOptions['script']
 			loadImages(scriptOptions['resources']['imgs']);
 		}
+		
+		/*
+		* Метод интерпритатор
+		*/
 		self.execScript = function (){
 			for(scriptStr; scriptStr<script.length;scriptStr++){
 				instruction = script[scriptStr][0];
@@ -353,20 +400,27 @@
 						chars={};
 					}break;
 					case 'say':{
-						charSay(cmd['char'], cmd['text']);
+						charSay(cmd);
 						scriptStr++;
 						return;
 					}break;
 					case 'menu':{
-						showMenu(cmd);
+						menu.showMenu(cmd);
 						return;
 					}break;
 					case 'to':{
-						goTo(cmd)
+						goTo(cmd);
+					}break;
+					case 'stop':{//добавлено для асинхронных команд
+						return; 
 					}break;
 					case 'label':{
 						labels[cmd] = scriptStr; 
 					}break;
+				}
+				let castomInstuctions = options['castomInstuctions'];
+				if(castomInstuctions[instruction]!=null){
+					castomInstuctions[instruction](cmd,self);
 				}
 				drawScene();
 				drawCharacter();
@@ -374,6 +428,7 @@
 			}
 		}
 	}
+
 	var options={
 		//настройки полотна
 		canvas:{
@@ -390,6 +445,21 @@
 		resources:{
 			onResourcesLoad: function(game){
 				game.execScript();
+			}
+		},
+		castomInstuctions:{
+			'send_request':function(cmd,game){
+				$.ajax({
+				  url: cmd['url'],
+				  method: cmd['method'],
+				  data: cmd['data'],
+				  success: function(data){
+					alert('Результат: '+data);
+				  },
+				  error: function(jqXHR, textStatus){
+					alert('Ошибка: '+textStatus);
+				  }
+				});
 			}
 		}
 	};
@@ -412,6 +482,9 @@
 			['say',{'char':'Джизель', 'text':'Увы, наш движок пока многого не умеет. Например, музыку пока не завезли, как и анимацию.'}],
 			['say',{'char':'Джизель', 'text':'А? Что?! Постойте, как убраться из вашего дома?! Пусть наш движок еще пока и не идеален, он уже достаточно мощный чтобы городо нести имя "Движок для визуальных новел"!'}],
 			['say',{'char':'Джизель', 'text':'Пройдем на кухню, там пройдет основная презентация :)'}],
+			['send_request',{'url':'http://www.volpi.ru', 
+				'method':'GET',
+				'data':null}],
 			['label','l1'],
 			['menu',[
 					{'text':'Согласится', 'to':'l3'},
@@ -428,13 +501,13 @@
 			['say',{'char':'Джизель', 'text':'Для этого мне понадобится помощь моей ассистентки.'}],
 			['say',{'char':'Джизель', 'text':'Джузеппо!!!'}],
 			['char',{'img':'ch2', 'position':'right'}],
-			['say',{'char':'Джузеппо', 'text':'Вызывали?'}],
+			['say',{'char':'Джузеппо', 'color':'blue', 'text':'Вызывали?'}],
 			['say',{'char':'Джизель', 'text':'Передаю слово тебе, Джузеппо.'}],
 			['scene',{'img':'sc2'}],
 			['char',{'img':'ch2', 'position':'center'}],
-			['say',{'char':'Джузеппо', 'text':'Короче, либо ты покупаешь движок, либо я убью тебя прямо тут. И никто тебе не поможет.'}],
+			['say',{'char':'Джузеппо', 'color':'blue', 'text':'Короче, либо ты покупаешь движок, либо я убью тебя прямо тут. И никто тебе не поможет.'}],
 			['char',{'img':'ch2_big', 'position':'center'}],
-			['say',{'char':'Джузеппо', 'text':'Никто...'}],
+			['say',{'char':'Джузеппо', 'color':'blue', 'text':'Никто...'}],
 			['scene',{'img':'end'}],
 	]};
 	var game = new TanEngine(options);
